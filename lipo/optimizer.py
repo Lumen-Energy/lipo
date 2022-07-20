@@ -10,6 +10,10 @@ import dlib
 logger = logging.getLogger(__name__)
 
 
+class FailedToConverge(Exception):
+    pass
+
+
 class EvaluationCandidate:
     def __init__(self, candidate, arg_names, categories, log_args, maximize, is_integer):
         self.candidate = candidate
@@ -318,6 +322,30 @@ class GlobalOptimizer:
         for _ in range(num_function_calls):
             candidate = self.get_candidate()
             candidate.set(self.function(**candidate.x))
+
+    def run_until(self, unchanged_iter: int, max_iter: int):
+        """
+        Run the optimizer until the optimum has gone unchanged for `unchanged_iter` iterations.
+
+        If `max_iter` is hit before this threshold has been reached, an exception is raise.
+        """
+        current_opt = 0
+        unchanged = 0
+        num_iter = 0
+        while unchanged < unchanged_iter and num_iter <= max_iter:
+            prev_opt = current_opt
+            candidate = self.get_candidate()
+            candidate.set(self.function(**candidate.x))
+            current_opt = self.optimum()[1]
+            if prev_opt == current_opt:
+                unchanged += 1
+            else:
+                unchanged = 0  # We want unchanged_iter successive iterations
+            num_iter += 1
+            if num_iter > max_iter:
+                raise FailedToConverge(f"Max iterations ({max_iter}) reached."
+                f" Current unchanged is {unchanged}, threshold is {unchanged_iter}.")
+        return num_iter
 
     @property
     def running_optimum(self):
