@@ -336,7 +336,7 @@ class GlobalOptimizer:
             prev_opt = current_opt
             candidate = self.get_candidate()
             candidate.set(self.function(**candidate.x))
-            current_opt = self.optimum()[1]
+            current_opt = self.optimum[1]
             if prev_opt == current_opt:
                 unchanged += 1
             else:
